@@ -48,6 +48,23 @@ npm run build
 npm start
 ```
 
+**To analyze a specific directory with `.` (current directory):**
+```bash
+# Change to your project directory first
+cd /path/to/your/project
+
+# Then start the server with --cwd
+node /path/to/gemini-mcp-server-local/dist/server.js --cwd .
+```
+
+**Or start server with custom working directory:**
+```bash
+# Start server with custom working directory
+node dist/server.js --cwd /path/to/your/project
+
+# Now you can use "." to refer to your project
+```
+
 ### 4. Use with Smithery AI
 
 The server will be available for local deployment in Smithery AI using their CLI.

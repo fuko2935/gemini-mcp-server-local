@@ -1416,6 +1416,19 @@ ${response.text()}
 
 // Start the server
 async function main() {
+  // Check for --cwd argument to change working directory
+  const cwdArgIndex = process.argv.indexOf('--cwd');
+  if (cwdArgIndex !== -1 && cwdArgIndex + 1 < process.argv.length) {
+    const newCwd = process.argv[cwdArgIndex + 1];
+    try {
+      process.chdir(newCwd);
+      console.log(`🗂️ Changed working directory to: ${process.cwd()}`);
+    } catch (error) {
+      console.error(`❌ Failed to change working directory to ${newCwd}:`, error);
+      process.exit(1);
+    }
+  }
+  
   const transport = new StdioServerTransport();
   await server.connect(transport);
   
