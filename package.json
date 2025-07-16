@@ -4,6 +4,7 @@
   "description": "Local MCP server for Gemini AI codebase analysis with folder path support",
   "type": "module",
   "main": "dist/server.js",
+  "module": "./src/server.ts",
   "bin": {
     "gemini-mcp-server-local": "dist/server.js"
   },
