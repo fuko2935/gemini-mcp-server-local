@@ -6,7 +6,7 @@ WORKDIR /app
 COPY package*.json ./
 
 # Install dependencies
-RUN npm ci --only=production
+RUN npm install --only=production
 
 # Copy source code
 COPY . .
@@ -15,7 +15,7 @@ COPY . .
 RUN npm run build
 
 # Make the script executable
-RUN chmod +x dist/simple-server.js
+RUN chmod +x dist/server.js
 
 # Set the entry point
-ENTRYPOINT ["node", "dist/simple-server.js"]
+ENTRYPOINT ["node", "dist/server.js"]

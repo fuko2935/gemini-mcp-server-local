@@ -40,7 +40,6 @@ Thumbs.db
 *.temp
 
 # Lock files
-package-lock.json
 yarn.lock
 
 # Coverage reports
