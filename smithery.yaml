@@ -1,15 +1,20 @@
-runtime: "typescript"
 startCommand:
-  type: "stdio"
+  type: stdio
   configSchema:
-    type: "object"
+    type: object
     properties:
       geminiApiKey:
-        type: "string"
+        type: string
         description: "Gemini API key for code analysis (get from https://makersuite.google.com/app/apikey)"
         default: ""
-    required: []
-env:
-  NODE_ENV: "production"
-  DEBUG: "false"
-  LOG_LEVEL: "info"
+  exampleConfig:
+    geminiApiKey: "your-api-key-here"
+  commandFunction: |-
+    (config) => ({
+      command: 'node',
+      args: ['dist/server.js'],
+      env: {
+        GEMINI_API_KEY: config.geminiApiKey || '',
+        NODE_ENV: 'production'
+      }
+    })

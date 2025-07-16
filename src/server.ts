@@ -360,8 +360,8 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       try {
         const params = LocalFolderAnalyzerSchema.parse(args);
         
-        // Check for Gemini API key from environment or config (lazy loading)
-        const apiKey = process.env.GEMINI_API_KEY || process.env.geminiApiKey;
+        // Check for Gemini API key from environment (lazy loading)
+        const apiKey = process.env.GEMINI_API_KEY;
         if (!apiKey) {
           return {
             content: [
