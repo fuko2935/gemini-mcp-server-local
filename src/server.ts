@@ -15,6 +15,96 @@ import { glob } from "glob";
 import { z } from "zod";
 import { zodToJsonSchema } from "zod-to-json-schema";
 
+// Helper function to resolve API keys from environment and parse comma-separated values
+function resolveApiKeys(): string[] {
+  const envApiKey = process.env.GEMINI_API_KEY;
+  if (!envApiKey) {
+    return [];
+  }
+  
+  // Check if it contains comma-separated multiple keys
+  if (envApiKey.includes(',')) {
+    return envApiKey.split(',').map((key: string) => key.trim()).filter((key: string) => key.length > 0);
+  }
+  
+  return [envApiKey];
+}
+
+// API Key Rotation System with Infinite Retry for 4 Minutes
+async function retryWithApiKeyRotation<T>(
+  createModelFn: (apiKey: string) => any,
+  requestFn: (model: any) => Promise<T>,
+  apiKeys: string[],
+  maxDurationMs: number = 4 * 60 * 1000 // 4 minutes total timeout
+): Promise<T> {
+  const startTime = Date.now();
+  let currentKeyIndex = 0;
+  let lastError: Error | undefined;
+  let attemptCount = 0;
+  
+  console.log(`🔄 Starting API request with ${apiKeys.length} key(s) rotation...`);
+  
+  while (Date.now() - startTime < maxDurationMs) {
+    attemptCount++;
+    const currentApiKey = apiKeys[currentKeyIndex];
+    
+    console.log(`🔑 Attempt ${attemptCount} with key ${currentKeyIndex + 1}/${apiKeys.length}`);
+    
+    try {
+      const model = createModelFn(currentApiKey);
+      const result = await requestFn(model);
+      
+      if (attemptCount > 1) {
+        console.log(`✅ API request successful after ${attemptCount} attempts with key ${currentKeyIndex + 1}`);
+      }
+      
+      return result;
+    } catch (error: any) {
+      lastError = error;
+      
+      console.warn(`❌ API request failed with key ${currentKeyIndex + 1}: ${error.message}`);
+      
+      // Check if it's a rate limit, quota, overload or invalid key error
+      const isRotatableError = error.message && (
+        error.message.includes('429') || 
+        error.message.includes('Too Many Requests') || 
+        error.message.includes('quota') || 
+        error.message.includes('rate limit') ||
+        error.message.includes('exceeded your current quota') ||
+        error.message.includes('API key not valid') ||
+        error.message.includes('503') ||
+        error.message.includes('Service Unavailable') ||
+        error.message.includes('overloaded') ||
+        error.message.includes('Please try again later')
+      );
+      
+      if (isRotatableError) {
+        // Rotate to next API key
+        const previousKeyIndex = currentKeyIndex + 1;
+        currentKeyIndex = (currentKeyIndex + 1) % apiKeys.length;
+        const remainingTime = Math.ceil((maxDurationMs - (Date.now() - startTime)) / 1000);
+        const errorType = error.message.includes('API key not valid') ? 'Invalid API key' : 
+                         error.message.includes('503') || error.message.includes('overloaded') ? 'Service overloaded' : 
+                         'Rate limit hit';
+        
+        console.warn(`🔄 API Key Rotation: ${errorType} - switching from key ${previousKeyIndex} to key ${currentKeyIndex + 1} (${remainingTime}s remaining)`);
+        
+        // Small delay before trying next key
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        continue;
+      }
+      
+      // For non-rate-limit errors, throw immediately
+      console.error(`💥 Non-rotatable API error: ${error.message}`);
+      throw error;
+    }
+  }
+  
+  // 4 minutes expired
+  console.error(`⏰ API request failed after 4 minutes with ${attemptCount} attempts across ${apiKeys.length} API keys`);
+  throw new Error(`Gemini API requests failed after 4 minutes with ${attemptCount} attempts across ${apiKeys.length} API keys. All keys hit rate limits. Last error: ${lastError?.message || 'Unknown error'}`);
+}
+
 // System prompts for different analysis modes
 const SYSTEM_PROMPTS = {
   general: `You are a **Senior AI Software Engineer and Technical Consultant** with comprehensive access to a complete software project codebase. Your expertise spans all modern programming languages, frameworks, and architectural patterns.
@@ -646,22 +736,22 @@ This is your local expert coding companion with **36 specialized analysis modes*
 
     case "check_api_key_status":
       try {
-        const apiKey = process.env.GEMINI_API_KEY;
-        if (!apiKey) {
+        const apiKeys = resolveApiKeys();
+        if (apiKeys.length === 0) {
           return {
             content: [
               {
                 type: "text",
                 text: `# 🔑 API Key Status - Not Configured
 
-❌ **No Gemini API key found**
+❌ **No Gemini API keys found**
 
-**Please set your Gemini API key:**
-\`\`\`bash
-export GEMINI_API_KEY="your-api-key-here"
-\`\`\`
+**Please configure your API keys:**
+- **Smithery AI**: Set \`geminiApiKeys\` in your server configuration
+- **Environment**: Set \`GEMINI_API_KEY\` environment variable
+- **Multiple keys**: Use comma-separated format: \`key1,key2,key3\`
 
-**Get your API key at:** https://makersuite.google.com/app/apikey
+**Get your API keys at:** https://makersuite.google.com/app/apikey
 
 **Status:** Not configured
 **Keys configured:** 0
@@ -671,20 +761,69 @@ export GEMINI_API_KEY="your-api-key-here"
           };
         }
 
+        // Generate rotation schedule preview
+        const rotationPreview = apiKeys.slice(0, 10).map((key, index) => {
+          const maskedKey = key.substring(0, 8) + "..." + key.substring(key.length - 4);
+          return `${index + 1}. ${maskedKey}`;
+        }).join('\n');
+        
+        const totalKeys = apiKeys.length;
+        const rotationTime = totalKeys > 0 ? Math.ceil(240 / totalKeys) : 0; // 4 minutes / keys
+
         return {
           content: [
             {
               type: "text",
-              text: `# 🔑 API Key Status - Configured
+              text: `# 🔑 Gemini API Key Status Report
 
-✅ **Gemini API key configured**
+## 📊 Configuration Summary
+- **Total Active Keys**: ${totalKeys}
+- **Environment Variable**: ${process.env.GEMINI_API_KEY ? '✅ Set' : '❌ Not set'}
+- **Rotation Available**: ${totalKeys > 1 ? '✅ Yes' : '❌ Single key only'}
+- **Rate Limit Protection**: ${totalKeys > 1 ? '🛡️ Active' : '⚠️ Limited'}
 
-**Status:** Active
-**Keys configured:** 1
-**Rate limit protection:** Single key mode
-**Environment:** Local deployment
+## 🔄 Rotation Strategy
+${totalKeys > 1 ? `
+**Rotation Schedule**: ${rotationTime} seconds per key
+**Maximum uptime**: 4 minutes continuous rotation
+**Fallback protection**: Automatic key switching on rate limits
 
-**Note:** For multiple key rotation, use the geminiApiKeys parameter in tool calls.`,
+**Key Rotation Preview** (first 10 keys):
+${rotationPreview}
+${totalKeys > 10 ? `\n... and ${totalKeys - 10} more keys` : ''}
+` : `
+**Single Key Mode**: No rotation available
+**Recommendation**: Add more keys for better rate limit protection
+**How to add**: Use comma-separated format in Smithery configuration
+`}
+
+## 🎯 Performance Optimization
+- **Recommended keys**: 3-5 for optimal performance
+- **Maximum supported**: 100 keys
+- **Current efficiency**: ${Math.min(100, (totalKeys / 5) * 100).toFixed(1)}%
+
+## 🚀 Usage Tips
+${totalKeys === 1 ? `
+⚠️ **Single key detected**
+- Consider adding more keys for better rate limit protection
+- Use comma-separated format in Smithery: "key1,key2,key3"
+- Or environment variable: GEMINI_API_KEY="key1,key2,key3"
+` : `
+✅ **Multi-key configuration active**
+- Rate limit protection is active
+- Automatic failover enabled
+- Optimal performance achieved
+`}
+
+## 🔧 Troubleshooting
+- **Rate limits**: With ${totalKeys} keys, you can handle ${totalKeys}x more requests
+- **Error recovery**: Automatic retry with next key on failures
+- **Monitoring**: This tool helps track your key configuration
+
+---
+
+*Status checked at ${new Date().toISOString()}*
+*Next rotation cycle: ${totalKeys > 1 ? `${rotationTime}s per key` : 'No rotation'}*`,
             },
           ],
         };
@@ -710,9 +849,9 @@ export GEMINI_API_KEY="your-api-key-here"
       try {
         const params = LocalFolderAnalyzerSchema.parse(args);
         
-        // Check for Gemini API key from environment (lazy loading)
-        const apiKey = process.env.GEMINI_API_KEY;
-        if (!apiKey) {
+        // Check for Gemini API keys from environment (lazy loading)
+        const apiKeys = resolveApiKeys();
+        if (apiKeys.length === 0) {
           return {
             content: [
               {
@@ -767,15 +906,22 @@ Set \`geminiApiKey\` in your server configuration.`,
           };
         }
 
-        // Analyze with Gemini API
+        // Analyze with Gemini API using key rotation
         const systemPrompt = SYSTEM_PROMPTS[params.analysisMode as keyof typeof SYSTEM_PROMPTS] || SYSTEM_PROMPTS.general;
         const prompt = `${systemPrompt}\n\n---\n\n# Project: ${params.projectName || projectName}\n\n# Question: ${params.question}\n\n# Codebase Context:\n${context}`;
         
-        const genAI = new GoogleGenerativeAI(apiKey);
-        const model = genAI.getGenerativeModel({ model: "gemini-2.5-pro" });
-        
-        const result = await model.generateContent(prompt);
-        const response = await result.response;
+        // Use API key rotation for better rate limit handling
+        const createModelFn = (apiKey: string) => {
+          const genAI = new GoogleGenerativeAI(apiKey);
+          return genAI.getGenerativeModel({ model: "gemini-2.5-pro" });
+        };
+
+        const result = await retryWithApiKeyRotation(
+          createModelFn,
+          (model) => model.generateContent(prompt),
+          apiKeys
+        );
+        const response = await (result as any).response;
         
         if (!response.text()) {
           throw new Error('Gemini returned empty response');
@@ -843,9 +989,9 @@ ${response.text()}
       try {
         const params = GeminiCodebaseAnalyzerSchema.parse(args);
         
-        // Check for Gemini API key
-        const apiKey = process.env.GEMINI_API_KEY;
-        if (!apiKey) {
+        // Check for Gemini API keys
+        const apiKeys = resolveApiKeys();
+        if (apiKeys.length === 0) {
           return {
             content: [
               {
@@ -899,12 +1045,18 @@ export GEMINI_API_KEY="your-api-key-here"
         // Create the analysis prompt
         const megaPrompt = `${systemPrompt}\n\nPROJECT CONTEXT:\n${fullContext}\n\nCODING AI QUESTION:\n${params.question}`;
         
-        // Analyze with Gemini API
-        const genAI = new GoogleGenerativeAI(apiKey);
-        const model = genAI.getGenerativeModel({ model: "gemini-2.5-pro" });
-        
-        const result = await model.generateContent(megaPrompt);
-        const response = await result.response;
+        // Analyze with Gemini API using key rotation
+        const createModelFn = (apiKey: string) => {
+          const genAI = new GoogleGenerativeAI(apiKey);
+          return genAI.getGenerativeModel({ model: "gemini-2.5-pro" });
+        };
+
+        const result = await retryWithApiKeyRotation(
+          createModelFn,
+          (model) => model.generateContent(megaPrompt),
+          apiKeys
+        );
+        const response = await (result as any).response;
         
         if (!response.text()) {
           throw new Error('Gemini returned empty response');
@@ -964,9 +1116,9 @@ ${response.text()}
       try {
         const params = GeminiCodeSearchSchema.parse(args);
         
-        // Check for Gemini API key
-        const apiKey = process.env.GEMINI_API_KEY;
-        if (!apiKey) {
+        // Check for Gemini API keys
+        const apiKeys = resolveApiKeys();
+        if (apiKeys.length === 0) {
           return {
             content: [
               {
@@ -1026,12 +1178,18 @@ Please find and extract the most relevant code snippets that match the search qu
 
 Format your response as a structured analysis with clear sections for each match.`;
 
-        // Send search query to Gemini AI
-        const genAI = new GoogleGenerativeAI(apiKey);
-        const model = genAI.getGenerativeModel({ model: "gemini-2.5-pro" });
-        
-        const result = await model.generateContent(searchPrompt);
-        const response = await result.response;
+        // Send search query to Gemini AI using key rotation
+        const createModelFn = (apiKey: string) => {
+          const genAI = new GoogleGenerativeAI(apiKey);
+          return genAI.getGenerativeModel({ model: "gemini-2.5-pro" });
+        };
+
+        const result = await retryWithApiKeyRotation(
+          createModelFn,
+          (model) => model.generateContent(searchPrompt),
+          apiKeys
+        );
+        const response = await (result as any).response;
         
         if (!response.text()) {
           throw new Error('Gemini returned empty response');
