@@ -110,13 +110,29 @@ node dist/server.js
 ### Security Audit
 ```bash
 # Security-focused analysis
-# MCP input: {"folderPath": "/path/to/project", "question": "Find security vulnerabilities", "analysisMode": "security"}
+# MCP input: {"folderPath": ".", "question": "Find security vulnerabilities", "analysisMode": "security"}
 ```
 
 ### Architecture Review
 ```bash
 # Architecture analysis
 # MCP input: {"folderPath": "./src", "question": "Explain the system architecture", "analysisMode": "architecture"}
+```
+
+### Path Examples (Use Your Own Paths)
+```bash
+# Windows examples
+{"folderPath": "C:\\MyProject", "question": "Analyze this"}
+{"folderPath": "D:\\Development\\MyApp", "question": "Review code"}
+
+# Linux/Mac examples  
+{"folderPath": "/home/user/projects/myapp", "question": "Analyze this"}
+{"folderPath": "/Users/name/Development/project", "question": "Review code"}
+
+# Relative paths (recommended)
+{"folderPath": ".", "question": "Analyze current directory"}
+{"folderPath": "./src", "question": "Analyze source code"}
+{"folderPath": "../other-project", "question": "Analyze sibling project"}
 ```
 
 ## Configuration

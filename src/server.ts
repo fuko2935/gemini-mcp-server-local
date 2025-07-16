@@ -505,7 +505,7 @@ async function readLocalFolder(folderPath: string): Promise<{context: string, pr
     absolutePath = folderPath;
   } else {
     // If it's relative, resolve from actual working directory
-    absolutePath = path.resolve(process.cwd(), folderPath);
+    absolutePath = path.resolve(folderPath);
   }
   
   // Debug: Log the paths being used
