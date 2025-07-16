@@ -1,41 +1,15 @@
-name: gemini-mcp-server-local
-version: "1.0.0"
-description: "Local MCP server for Gemini AI codebase analysis with folder path support"
-
-build:
-  dockerfile: Dockerfile
-  context: .
-
-server:
-  type: mcp
-  transport: stdio
-  command: node dist/server.js
-  
-environment:
-  required:
-    - GEMINI_API_KEY
-  optional: []
-
-resources:
-  memory: 512Mi
-  cpu: 256m
-
-health:
-  timeout: 30s
-  retries: 3
-
-metadata:
-  categories:
-    - ai
-    - code-analysis
-    - gemini
-  tags:
-    - mcp
-    - local
-    - privacy
-    - codebase
-    - analysis
-  
-author: fuko2935
-license: MIT
-repository: https://github.com/fuko2935/gemini-mcp-server-local
+runtime: "typescript"
+startCommand:
+  type: "stdio"
+  configSchema:
+    type: "object"
+    properties:
+      geminiApiKey:
+        type: "string"
+        description: "Gemini API key for code analysis"
+    required:
+      - geminiApiKey
+env:
+  NODE_ENV: "production"
+  DEBUG: "false"
+  LOG_LEVEL: "info"
