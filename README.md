@@ -10,8 +10,11 @@ Perfect for private projects, local development, and security-conscious teams. Y
 - 🔒 **Complete privacy** - All processing happens locally
 - 🎯 **36 specialized analysis modes** - From general to security, performance, architecture
 - 🚀 **Gemini 2.5 Pro** - Most capable and intelligent Gemini model
-- 🛡️ **Security first** - Binary file filtering, size limits, ignore patterns
+- 🔑 **Multi-key API rotation** - Support for multiple API keys with automatic rotation
+- 🛡️ **Rate limit protection** - Automatic key switching on limits (4-minute uptime)
 - 📊 **Smart file processing** - Automatic exclusion of build artifacts and dependencies
+- 🔍 **Multiple analysis tools** - Local folder analysis, codebase analysis, code search
+- 🚀 **Enhanced reliability** - Retry mechanisms and intelligent error handling
 
 ## Quick Start
 
@@ -21,13 +24,22 @@ Perfect for private projects, local development, and security-conscious teams. Y
 npm install
 ```
 
-### 2. Set up Gemini API Key
+### 2. Set up Gemini API Key(s)
 
-Get your API key from [Google AI Studio](https://makersuite.google.com/app/apikey)
+Get your API key(s) from [Google AI Studio](https://makersuite.google.com/app/apikey)
 
+**Single key:**
 ```bash
 export GEMINI_API_KEY="your-api-key-here"
 ```
+
+**Multiple keys for rotation (recommended):**
+```bash
+export GEMINI_API_KEY="key1,key2,key3,key4"
+```
+
+**For Smithery AI deployment:**
+Configure `geminiApiKeys` in Smithery with comma-separated keys for automatic rotation.
 
 ### 3. Build and Run
 
@@ -39,6 +51,21 @@ npm start
 ### 4. Use with Smithery AI
 
 The server will be available for local deployment in Smithery AI using their CLI.
+
+**Smithery deployment:**
+```bash
+smithery deploy local
+```
+
+**Required configuration:**
+- `geminiApiKeys`: Your API keys (comma-separated for multiple keys)
+
+**Available tools:**
+- `get_usage_guide` - Learn how to use the server
+- `check_api_key_status` - Monitor API key rotation
+- `analyze_local_folder` - Analyze local directories
+- `gemini_codebase_analyzer` - Analyze formatted content
+- `gemini_code_search` - Search through code
 
 ## Analysis Modes
 
@@ -96,8 +123,30 @@ node dist/server.js
 
 ### Environment Variables
 
-- `GEMINI_API_KEY` - Required. Your Gemini API key
+- `GEMINI_API_KEY` - Required. Your Gemini API key(s). Use comma-separated for multiple keys
 - `NODE_ENV` - Optional. Set to "production" for production builds
+
+### Multi-Key API Rotation
+
+The server supports multiple API keys for better rate limit handling:
+
+**Benefits:**
+- Automatic key rotation on rate limits
+- 4-minute continuous operation
+- Improved reliability and uptime
+- Intelligent error handling
+
+**Configuration:**
+```bash
+# Single key
+export GEMINI_API_KEY="your-key-here"
+
+# Multiple keys (recommended)
+export GEMINI_API_KEY="key1,key2,key3,key4,key5"
+```
+
+**Monitoring:**
+Use `check_api_key_status` tool to monitor rotation and performance.
 
 ### Folder Processing
 

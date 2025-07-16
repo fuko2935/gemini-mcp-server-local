@@ -1,7 +1,7 @@
 {
   "name": "gemini-mcp-server-local",
   "version": "1.0.0",
-  "description": "Local MCP server for Gemini AI codebase analysis with folder path support",
+  "description": "Local MCP server for Gemini AI codebase analysis with direct folder path support, multi-key API rotation, and 36 specialized analysis modes",
   "type": "module",
   "main": "dist/server.js",
   "module": "./src/server.ts",
@@ -26,7 +26,11 @@
     "codebase",
     "analysis",
     "local",
-    "filesystem"
+    "filesystem",
+    "multi-key",
+    "rotation",
+    "smithery",
+    "privacy"
   ],
   "author": "Your Name",
   "license": "MIT",
