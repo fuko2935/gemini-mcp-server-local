@@ -192,38 +192,217 @@ Deliver comprehensive audit reports with actionable improvement strategies.`,
 Provide specific performance optimizations with measurable impact.`
 };
 
+// Helper function for API key fields
+function generateApiKeyFields() {
+  const fields: any = {
+    geminiApiKeys: z.string().min(1).optional().describe("🔑 GEMINI API KEYS: Optional if set in environment variables. MULTI-KEY SUPPORT: You can enter multiple keys separated by commas for automatic rotation (e.g., 'key1,key2,key3'). Get yours at: https://makersuite.google.com/app/apikey"),
+    geminiApiKeysArray: z.array(z.string().min(1)).optional().describe("🔑 GEMINI API KEYS ARRAY: Multiple API keys array (alternative to comma-separated). When provided, the system will automatically rotate between keys to avoid rate limits. Example: ['key1', 'key2', 'key3']")
+  };
+  
+  // Add numbered API key fields (geminiApiKey2 through geminiApiKey100)
+  for (let i = 2; i <= 100; i++) {
+    fields[`geminiApiKey${i}`] = z.string().min(1).optional().describe(`🔑 GEMINI API KEY ${i}: Optional additional API key for rate limit rotation`);
+  }
+  
+  return fields;
+}
+
+// Usage Guide Schema
+const UsageGuideSchema = z.object({
+  topic: z.enum(["overview", "getting-started", "folder-setup", "analysis-modes", "search-tips", "examples", "troubleshooting", "advanced-tips"]).optional().describe(`📖 HELP TOPIC (choose what you need help with):
+• overview - What this MCP server does and its capabilities
+• getting-started - First steps and basic usage
+• folder-setup - How to set up local folder analysis
+• analysis-modes - Detailed guide to all 36 analysis modes
+• search-tips - How to write effective search queries
+• examples - Real-world usage examples and workflows
+• troubleshooting - Common issues and solutions
+• advanced-tips - Pro tips for maximum efficiency
+
+💡 TIP: Start with 'overview' if you're new to this MCP server!`)
+});
+
+// API Key Status Schema
+const ApiKeyStatusSchema = z.object({
+  geminiApiKeys: z.string().min(1).optional().describe("🔑 GEMINI API KEYS: Optional if set in environment variables. MULTI-KEY SUPPORT: You can enter multiple keys separated by commas for automatic rotation (e.g., 'key1,key2,key3'). Get yours at: https://makersuite.google.com/app/apikey"),
+  ...generateApiKeyFields()
+});
+
 // Local Folder Analyzer Schema
 const LocalFolderAnalyzerSchema = z.object({
   folderPath: z.string().min(1).describe("📁 FOLDER PATH: Direct path to your project folder. Examples: '/home/user/myproject', 'C:\\\\Users\\\\Name\\\\MyProject', '.' for current directory, './src' for subdirectory. The server will automatically read and analyze all relevant files in the specified folder."),
-  question: z.string().min(1).max(2000).describe("❓ YOUR QUESTION: Ask anything about the codebase. Examples: 'How does authentication work?', 'Find all API endpoints', 'Explain the database schema', 'What are the main components?', 'How to deploy this?', 'Find security vulnerabilities', 'Analyze the architecture', 'Review code quality'"),
+  question: z.string().min(1).max(2000).describe("❓ YOUR QUESTION: Ask anything about the codebase. 🌍 TIP: Use English for best AI performance! Examples: 'How does authentication work?', 'Find all API endpoints', 'Explain the database schema', 'What are the main components?', 'How to deploy this?', 'Find security vulnerabilities'. 💡 NEW USER? Use 'get_usage_guide' tool first to learn all capabilities!"),
+  projectName: z.string().optional().describe("📋 PROJECT NAME: Optional name for your project to provide better context in the analysis results."),
   analysisMode: z.enum(["general", "implementation", "refactoring", "explanation", "debugging", "audit", "security", "performance", "testing", "documentation", "migration", "review", "onboarding", "api", "apex", "gamedev", "aiml", "devops", "mobile", "frontend", "backend", "database", "startup", "enterprise", "blockchain", "embedded", "architecture", "cloud", "data", "monitoring", "infrastructure", "compliance", "opensource", "freelancer", "education", "research"]).optional().describe(`🎯 ANALYSIS MODE (choose the expert that best fits your needs):
 
-📋 **GENERAL MODES:**
+📋 GENERAL MODES:
 • general (default) - Balanced analysis for any question
 • explanation - Educational explanations for learning
-• onboarding - New developer guidance
+• onboarding - New developer guidance and getting started
+• review - Code review and quality assessment
+• audit - Comprehensive codebase examination
 
-🔧 **DEVELOPMENT MODES:**
-• implementation - Building features step-by-step
+🔧 DEVELOPMENT MODES:
+• implementation - Building new features step-by-step
+• refactoring - Code improvement and restructuring
 • debugging - Bug hunting and troubleshooting
-• refactoring - Code improvement and optimization
 • testing - Test strategy and quality assurance
+• documentation - Technical writing and API docs
+• migration - Legacy modernization and upgrades
 
-🎯 **SPECIALIZED MODES:**
-• security - Security analysis and vulnerabilities
-• performance - Performance optimization
-• audit - Comprehensive code quality audit
-• architecture - System design and patterns
+🎨 SPECIALIZATION MODES:
+• frontend - React/Vue/Angular, modern web UI/UX
+• backend - Node.js/Python, APIs, microservices
+• mobile - React Native/Flutter, native apps
+• database - SQL/NoSQL, optimization, schema design
+• devops - CI/CD, infrastructure, deployment
+• security - Vulnerability assessment, secure coding
 
-🚀 **TECHNOLOGY MODES:**
-• frontend - Web UI, React, Vue analysis
-• backend - Server-side, API analysis
-• mobile - Mobile app development
-• devops - CI/CD, deployment, infrastructure
-• aiml - AI/ML, data science analysis
-• blockchain - Web3, smart contracts
+🚀 ADVANCED MODES:
+• api - API design and developer experience
+• apex - Production-ready implementation (zero defects)
+• gamedev - JavaScript game development optimization
+• aiml - Machine learning, AI systems, MLOps
+• startup - MVP development, rapid prototyping
+• enterprise - Large-scale systems, corporate integration
+• blockchain - Web3, smart contracts, DeFi
+• embedded - IoT, hardware programming, edge computing
 
-*And 25+ more specialized modes available!*`),
+🏗️ ARCHITECTURE & INFRASTRUCTURE:
+• architecture - System design, patterns, scalability
+• cloud - AWS/GCP/Azure, serverless, cloud-native
+• data - Data pipelines, ETL, analytics, data engineering
+• monitoring - Observability, alerts, SLA/SLO, incident response
+• infrastructure - IaC, Kubernetes, platform engineering
+
+🏢 BUSINESS & GOVERNANCE:
+• compliance - GDPR, SOX, HIPAA, regulatory frameworks
+• opensource - Community building, licensing, maintainer guidance
+• freelancer - Client management, contracts, business practices
+• education - Curriculum design, tutorials, learning content
+• research - Innovation, prototyping, academic collaboration
+
+💡 TIP: Choose the mode that matches your role or question type for the most relevant expert analysis!`),
+  ...generateApiKeyFields()
+});
+
+// Codebase Analyzer Schema (for manual content input)
+const GeminiCodebaseAnalyzerSchema = z.object({
+  codebaseContext: z.string().min(1).describe("📁 CODEBASE CONTENT: The full content of your project files concatenated together. This should include all relevant source files with their file paths as separators. Format: '--- File: path/to/file ---\\n<file content>\\n\\n'. This content will be analyzed by Gemini AI."),
+  question: z.string().min(1).max(2000).describe("❓ YOUR QUESTION: Ask anything about the codebase. 🌍 TIP: Use English for best AI performance! Examples: 'How does authentication work?', 'Find all API endpoints', 'Explain the database schema', 'What are the main components?', 'How to deploy this?', 'Find security vulnerabilities'. 💡 NEW USER? Use 'get_usage_guide' tool first to learn all capabilities!"),
+  projectName: z.string().optional().describe("📋 PROJECT NAME: Optional name for your project to provide better context in the analysis results."),
+  analysisMode: z.enum(["general", "implementation", "refactoring", "explanation", "debugging", "audit", "security", "performance", "testing", "documentation", "migration", "review", "onboarding", "api", "apex", "gamedev", "aiml", "devops", "mobile", "frontend", "backend", "database", "startup", "enterprise", "blockchain", "embedded", "architecture", "cloud", "data", "monitoring", "infrastructure", "compliance", "opensource", "freelancer", "education", "research"]).optional().describe(`🎯 ANALYSIS MODE (choose the expert that best fits your needs):
+
+📋 GENERAL MODES:
+• general (default) - Balanced analysis for any question
+• explanation - Educational explanations for learning
+• onboarding - New developer guidance and getting started
+• review - Code review and quality assessment
+• audit - Comprehensive codebase examination
+
+🔧 DEVELOPMENT MODES:
+• implementation - Building new features step-by-step
+• refactoring - Code improvement and restructuring
+• debugging - Bug hunting and troubleshooting
+• testing - Test strategy and quality assurance
+• documentation - Technical writing and API docs
+• migration - Legacy modernization and upgrades
+
+🎨 SPECIALIZATION MODES:
+• frontend - React/Vue/Angular, modern web UI/UX
+• backend - Node.js/Python, APIs, microservices
+• mobile - React Native/Flutter, native apps
+• database - SQL/NoSQL, optimization, schema design
+• devops - CI/CD, infrastructure, deployment
+• security - Vulnerability assessment, secure coding
+
+🚀 ADVANCED MODES:
+• api - API design and developer experience
+• apex - Production-ready implementation (zero defects)
+• gamedev - JavaScript game development optimization
+• aiml - Machine learning, AI systems, MLOps
+• startup - MVP development, rapid prototyping
+• enterprise - Large-scale systems, corporate integration
+• blockchain - Web3, smart contracts, DeFi
+• embedded - IoT, hardware programming, edge computing
+
+🏗️ ARCHITECTURE & INFRASTRUCTURE:
+• architecture - System design, patterns, scalability
+• cloud - AWS/GCP/Azure, serverless, cloud-native
+• data - Data pipelines, ETL, analytics, data engineering
+• monitoring - Observability, alerts, SLA/SLO, incident response
+• infrastructure - IaC, Kubernetes, platform engineering
+
+🏢 BUSINESS & GOVERNANCE:
+• compliance - GDPR, SOX, HIPAA, regulatory frameworks
+• opensource - Community building, licensing, maintainer guidance
+• freelancer - Client management, contracts, business practices
+• education - Curriculum design, tutorials, learning content
+• research - Innovation, prototyping, academic collaboration
+
+💡 TIP: Choose the mode that matches your role or question type for the most relevant expert analysis!`),
+  ...generateApiKeyFields()
+});
+
+// Code Search Schema
+const GeminiCodeSearchSchema = z.object({
+  codebaseContext: z.string().min(1).describe("📁 CODEBASE CONTENT: The full content of your project files concatenated together. This should include all relevant source files with their file paths as separators. Format: '--- File: path/to/file ---\\n<file content>\\n\\n'. This content will be searched by Gemini AI."),
+  projectName: z.string().optional().describe("📋 PROJECT NAME: Optional name for your project to provide better context in the search results."),
+  searchQuery: z.string().min(1).max(500).describe(`🔍 SEARCH QUERY: What specific code pattern, function, or feature to find. 🌍 TIP: Use English for best AI performance! 💡 NEW USER? Use 'get_usage_guide' with 'search-tips' topic first! Examples:
+• 'authentication logic' - Find login/auth code
+• 'error handling' - Find try-catch blocks
+• 'database connection' - Find DB setup
+• 'API endpoints' - Find route definitions
+• 'React components' - Find UI components
+• 'class UserService' - Find specific class
+• 'async function' - Find async functions
+• 'import express' - Find Express usage
+• 'useState hook' - Find React state
+• 'SQL queries' - Find database queries`),
+  fileTypes: z.array(z.string()).optional().describe("📄 FILE TYPES: Limit search to specific file extensions. Examples: ['.ts', '.js'] for TypeScript/JavaScript, ['.py'] for Python, ['.jsx', '.tsx'] for React, ['.vue'] for Vue, ['.go'] for Go. Leave empty to search all code files."),
+  maxResults: z.number().min(1).max(20).optional().describe("🎯 MAX RESULTS: Maximum number of relevant code snippets to analyze (default: 5, max: 20). Higher numbers = more comprehensive but slower analysis."),
+  ...generateApiKeyFields()
+});
+
+// Dynamic Expert Create Schema
+const DynamicExpertCreateSchema = z.object({
+  codebaseContext: z.string().min(1).describe("📁 CODEBASE CONTENT: The full content of your project files concatenated together. This should include all relevant source files with their file paths as separators. Format: '--- File: path/to/file ---\\n<file content>\\n\\n'. This will be analyzed to create a custom expert."),
+  projectName: z.string().optional().describe("📋 PROJECT NAME: Optional name for your project to provide better context in the expert creation."),
+  expertiseHint: z.string().min(1).max(200).optional().describe("🎯 EXPERTISE HINT (optional): Suggest what kind of expert you need. Examples: 'React performance expert', 'Database architect', 'Security auditor', 'DevOps specialist'. Leave empty for automatic expert selection based on your project."),
+  ...generateApiKeyFields()
+});
+
+// Dynamic Expert Analyze Schema
+const DynamicExpertAnalyzeSchema = z.object({
+  codebaseContext: z.string().min(1).describe("📁 CODEBASE CONTENT: The full content of your project files concatenated together. This should include all relevant source files with their file paths as separators. Format: '--- File: path/to/file ---\\n<file content>\\n\\n'. This will be analyzed by the custom expert."),
+  projectName: z.string().optional().describe("📋 PROJECT NAME: Optional name for your project to provide better context in the analysis."),
+  question: z.string().min(1).max(2000).describe("❓ YOUR QUESTION: Ask anything about the codebase. 🌍 TIP: Use English for best AI performance! This will be analyzed using the custom expert mode created in step 1."),
+  expertPrompt: z.string().min(1).max(10000).describe("🎯 EXPERT PROMPT: The custom expert system prompt generated by 'gemini_dynamic_expert_create' tool. Copy the entire expert prompt from the previous step."),
+  ...generateApiKeyFields()
+});
+
+// Read Log File Schema
+const ReadLogFileSchema = z.object({
+  filename: z.enum(["activity.log", "error.log"]).describe("📄 LOG FILE NAME: Choose which log file to read. 'activity.log' contains all operations and debug info. 'error.log' contains only errors and critical issues."),
+});
+
+// Project Orchestrator Create Schema
+const ProjectOrchestratorCreateSchema = z.object({
+  codebaseContext: z.string().min(1).describe("📁 CODEBASE CONTENT: The full content of your project files concatenated together. This should include all relevant source files with their file paths as separators. Format: '--- File: path/to/file ---\\n<file content>\\n\\n'. This will be organized into groups."),
+  projectName: z.string().optional().describe("📋 PROJECT NAME: Optional name for your project to provide better context in the orchestrator results."),
+  analysisMode: z.enum(['general', 'implementation', 'refactoring', 'explanation', 'debugging', 'audit', 'security', 'performance', 'testing', 'documentation', 'migration', 'review', 'onboarding', 'api', 'apex', 'gamedev', 'aiml', 'devops', 'mobile', 'frontend', 'backend', 'database', 'startup', 'enterprise', 'blockchain', 'embedded', 'architecture', 'cloud', 'data', 'monitoring', 'infrastructure', 'compliance', 'opensource', 'freelancer', 'education', 'research']).default('general').describe("🎯 ANALYSIS MODE: Choose the expert that best fits your needs. The orchestrator will use this mode for all file groups to ensure consistent analysis across the entire project."),
+  maxTokensPerGroup: z.number().min(100000).max(950000).default(900000).optional().describe("🔢 MAX TOKENS PER GROUP: Maximum tokens per file group (default: 900K, max: 950K). Lower values create smaller groups for more detailed analysis. Higher values allow larger chunks but may hit API limits."),
+  ...generateApiKeyFields()
+});
+
+// Project Orchestrator Analyze Schema
+const ProjectOrchestratorAnalyzeSchema = z.object({
+  projectName: z.string().optional().describe("📋 PROJECT NAME: Optional name for your project to provide better context in the analysis results."),
+  question: z.string().min(1).max(2000).describe("❓ YOUR QUESTION: Ask anything about the codebase. 🌍 TIP: Use English for best AI performance! This will be analyzed using the file groups created in step 1."),
+  analysisMode: z.enum(['general', 'implementation', 'refactoring', 'explanation', 'debugging', 'audit', 'security', 'performance', 'testing', 'documentation', 'migration', 'review', 'onboarding', 'api', 'apex', 'gamedev', 'aiml', 'devops', 'mobile', 'frontend', 'backend', 'database', 'startup', 'enterprise', 'blockchain', 'embedded', 'architecture', 'cloud', 'data', 'monitoring', 'infrastructure', 'compliance', 'opensource', 'freelancer', 'education', 'research']).default('general').describe("🎯 ANALYSIS MODE: Choose the expert that best fits your needs. Must match the mode used in step 1."),
+  fileGroupsData: z.string().min(1).max(50000).describe("📦 FILE GROUPS DATA: The file groups data generated by 'project_orchestrator_create' tool. Copy the entire groups data from step 1."),
+  maxTokensPerGroup: z.number().min(100000).max(950000).default(900000).optional().describe("🔢 MAX TOKENS PER GROUP: Maximum tokens per file group (default: 900K, max: 950K). Must match the value used in step 1."),
+  ...generateApiKeyFields()
 });
 
 // Local folder reading function
@@ -331,7 +510,7 @@ async function readLocalFolder(folderPath: string): Promise<{context: string, pr
 const server = new Server({
   name: "gemini-mcp-server-local",
   version: "1.0.0",
-  description: "🏠 GEMINI AI LOCAL CODEBASE ASSISTANT - Direct folder path analysis with full local control. Perfect for private projects, local development, and security-conscious teams. 36 specialized analysis modes available."
+  description: "🏠 GEMINI AI LOCAL CODEBASE ASSISTANT - Direct folder path analysis with full local control. Perfect for private projects, local development, and security-conscious teams. All features from remote version with local folder access. 💡 START HERE: Use 'get_usage_guide' tool to learn all capabilities."
 }, {
   capabilities: {
     tools: {},
@@ -343,9 +522,54 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
   return {
     tools: [
       {
+        name: "get_usage_guide",
+        description: "📖 GET USAGE GUIDE - **START HERE!** Learn how to use this MCP server effectively. Essential for understanding all capabilities, analysis modes, and workflows. Use this first if you're new to the server.",
+        inputSchema: zodToJsonSchema(UsageGuideSchema),
+      },
+      {
+        name: "check_api_key_status",
+        description: "🔑 CHECK API KEY STATUS - Monitor your Gemini API keys configuration. Shows how many keys are configured, validates them, and provides rate limit protection status. Perfect for debugging API key issues.",
+        inputSchema: zodToJsonSchema(ApiKeyStatusSchema),
+      },
+      {
         name: "analyze_local_folder",
-        description: "📁 ANALYZE LOCAL FOLDER - Direct folder path analysis with full local control. Perfect for private projects and local development. Supports all 36 analysis modes from general to specialized (security, performance, architecture, etc.). Your code never leaves your machine.",
+        description: "📁 ANALYZE LOCAL FOLDER - **EASIEST FOR LOCAL** Direct folder path analysis with full local control! Perfect for private projects and local development. All 36 analysis modes available. Your code never leaves your machine.",
         inputSchema: zodToJsonSchema(LocalFolderAnalyzerSchema),
+      },
+      {
+        name: "gemini_codebase_analyzer", 
+        description: "🔍 MANUAL CODEBASE ANALYSIS - For pre-formatted content. Requires manually prepared codebase content. Use 'analyze_local_folder' for easier workflow with local folders.",
+        inputSchema: zodToJsonSchema(GeminiCodebaseAnalyzerSchema),
+      },
+      {
+        name: "gemini_code_search",
+        description: "⚡ FAST TARGETED SEARCH - Quickly find specific code patterns, functions, or features. Use when you know what you're looking for but need to locate it fast. Perfect for finding specific implementations, configuration files, or code examples.",
+        inputSchema: zodToJsonSchema(GeminiCodeSearchSchema),
+      },
+      {
+        name: "gemini_dynamic_expert_create",
+        description: "🎯 DYNAMIC EXPERT CREATE - Create custom experts for your specific codebase. Analyzes your project to generate specialized expert prompts for deeper analysis.",
+        inputSchema: zodToJsonSchema(DynamicExpertCreateSchema),
+      },
+      {
+        name: "gemini_dynamic_expert_analyze",
+        description: "🎯 DYNAMIC EXPERT ANALYZE - Analyze with custom expert created in step 1. Provides specialized analysis using project-specific expert knowledge.",
+        inputSchema: zodToJsonSchema(DynamicExpertAnalyzeSchema),
+      },
+      {
+        name: "read_log_file",
+        description: "📄 READ LOG FILE - **DEBUGGING TOOL** Read server log files (activity.log or error.log) for debugging, monitoring API key rotation, and troubleshooting issues. Useful for developers and administrators.",
+        inputSchema: zodToJsonSchema(ReadLogFileSchema),
+      },
+      {
+        name: "project_orchestrator_create",
+        description: "🎭 PROJECT ORCHESTRATOR CREATE - For massive projects (>1M tokens). Organize large codebases into manageable groups for comprehensive analysis.",
+        inputSchema: zodToJsonSchema(ProjectOrchestratorCreateSchema),
+      },
+      {
+        name: "project_orchestrator_analyze",
+        description: "🎭 PROJECT ORCHESTRATOR ANALYZE - Analyze massive projects using file groups created in step 1. Perfect for enterprise-scale codebase analysis.",
+        inputSchema: zodToJsonSchema(ProjectOrchestratorAnalyzeSchema),
       },
     ],
   };
@@ -356,6 +580,132 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
   const { name, arguments: args } = request.params;
 
   switch (name) {
+    case "get_usage_guide":
+      return {
+        content: [
+          {
+            type: "text",
+            text: `# 🏠 Gemini AI Local Codebase Assistant - Usage Guide
+
+## 🚀 What This MCP Server Does
+This is your local expert coding companion with **36 specialized analysis modes** and **10 powerful tools**:
+
+### 📁 **analyze_local_folder** - Direct Folder Analysis
+- **EASIEST FOR LOCAL**: Just provide a folder path!
+- Automatic file reading and processing
+- All 36 analysis modes available
+- Perfect for private projects and local development
+
+### 🔍 **gemini_codebase_analyzer** - Manual Analysis
+- For pre-formatted codebase content
+- When you already have content prepared
+- Full control over what gets analyzed
+
+### ⚡ **gemini_code_search** - Fast Search
+- Quickly find specific code patterns
+- RAG-like approach for targeted searches
+- Perfect when you know what you're looking for
+
+### 🎯 **Dynamic Expert Tools**
+- **gemini_dynamic_expert_create**: Generate custom experts for your project
+- **gemini_dynamic_expert_analyze**: Analyze with project-specific expertise
+
+### 🎭 **Project Orchestrator Tools**
+- **project_orchestrator_create**: Handle massive projects (>1M tokens)
+- **project_orchestrator_analyze**: Analyze enterprise-scale codebases
+
+### 📖 **Utility Tools**
+- **get_usage_guide**: This help system
+- **check_api_key_status**: Monitor API key configuration
+- **read_log_file**: Debug and troubleshoot server issues
+
+## 🎯 Quick Start Workflow
+1. **New to local folder?** → Use \`analyze_local_folder\` with your project path
+2. **Building feature?** → Use \`implementation\` mode  
+3. **Finding bugs?** → Use \`debugging\` mode
+4. **Quick search?** → Use \`gemini_code_search\` tool
+5. **Need custom expert?** → Use dynamic expert tools
+6. **Massive project?** → Use orchestrator tools
+
+## 💡 Pro Tips
+- **LOCAL CONTROL**: Your code never leaves your machine
+- Choose the right analysis mode for your expertise level
+- Use search first for specific code, analyzer for broad understanding
+- All tools work with any programming language and framework
+- Perfect for security-conscious teams and private projects
+
+## 🔑 Setup Requirements
+- Set GEMINI_API_KEY environment variable
+- Point to your local project folder
+- That's it! Start analyzing immediately.
+
+*🏠 Local version - Maximum privacy and control*`,
+          },
+        ],
+      };
+
+    case "check_api_key_status":
+      try {
+        const apiKey = process.env.GEMINI_API_KEY;
+        if (!apiKey) {
+          return {
+            content: [
+              {
+                type: "text",
+                text: `# 🔑 API Key Status - Not Configured
+
+❌ **No Gemini API key found**
+
+**Please set your Gemini API key:**
+\`\`\`bash
+export GEMINI_API_KEY="your-api-key-here"
+\`\`\`
+
+**Get your API key at:** https://makersuite.google.com/app/apikey
+
+**Status:** Not configured
+**Keys configured:** 0
+**Rate limit protection:** Unavailable`,
+              },
+            ],
+          };
+        }
+
+        return {
+          content: [
+            {
+              type: "text",
+              text: `# 🔑 API Key Status - Configured
+
+✅ **Gemini API key configured**
+
+**Status:** Active
+**Keys configured:** 1
+**Rate limit protection:** Single key mode
+**Environment:** Local deployment
+
+**Note:** For multiple key rotation, use the geminiApiKeys parameter in tool calls.`,
+            },
+          ],
+        };
+      } catch (error) {
+        return {
+          content: [
+            {
+              type: "text",
+              text: `# 🔑 API Key Status - Error
+
+❌ **Error checking API key status**
+
+**Error:** ${error instanceof Error ? error.message : String(error)}
+
+**Please ensure your API key is properly configured.**`,
+            },
+          ],
+          isError: true,
+        };
+      }
+
     case "analyze_local_folder":
       try {
         const params = LocalFolderAnalyzerSchema.parse(args);
@@ -419,7 +769,7 @@ Set \`geminiApiKey\` in your server configuration.`,
 
         // Analyze with Gemini API
         const systemPrompt = SYSTEM_PROMPTS[params.analysisMode as keyof typeof SYSTEM_PROMPTS] || SYSTEM_PROMPTS.general;
-        const prompt = `${systemPrompt}\n\n---\n\n# Project: ${projectName}\n\n# Question: ${params.question}\n\n# Codebase Context:\n${context}`;
+        const prompt = `${systemPrompt}\n\n---\n\n# Project: ${params.projectName || projectName}\n\n# Question: ${params.question}\n\n# Codebase Context:\n${context}`;
         
         const genAI = new GoogleGenerativeAI(apiKey);
         const model = genAI.getGenerativeModel({ model: "gemini-2.5-pro" });
@@ -437,7 +787,7 @@ Set \`geminiApiKey\` in your server configuration.`,
               type: "text",
               text: `# Local Folder Analysis Results
 
-## Project: ${projectName}
+## Project: ${params.projectName || projectName}
 
 **📁 Folder Path:** \`${params.folderPath}\`  
 **❓ Question:** ${params.question}  
@@ -489,8 +839,404 @@ ${response.text()}
         };
       }
 
+    case "gemini_codebase_analyzer":
+      try {
+        const params = GeminiCodebaseAnalyzerSchema.parse(args);
+        
+        // Check for Gemini API key
+        const apiKey = process.env.GEMINI_API_KEY;
+        if (!apiKey) {
+          return {
+            content: [
+              {
+                type: "text",
+                text: `# Gemini Codebase Analyzer - API Key Required
+
+❌ **No Gemini API key found**
+
+**Please set your Gemini API key:**
+\`\`\`bash
+export GEMINI_API_KEY="your-api-key-here"
+\`\`\`
+
+**Get your API key at:** https://makersuite.google.com/app/apikey`,
+              },
+            ],
+            isError: true,
+          };
+        }
+
+        // Use the provided codebase context directly
+        const fullContext = params.codebaseContext;
+        
+        if (fullContext.length === 0) {
+          return {
+            content: [
+              {
+                type: "text",
+                text: `# Gemini Codebase Analyzer - Empty Context
+
+❌ **Codebase context cannot be empty**
+
+**Please provide formatted codebase content using the format:**
+\`\`\`
+--- File: path/to/file ---
+<file content>
+
+--- File: path/to/another/file ---
+<file content>
+\`\`\``,
+              },
+            ],
+            isError: true,
+          };
+        }
+
+        // Select appropriate system prompt based on analysis mode
+        const analysisMode = params.analysisMode || "general";
+        const systemPrompt = SYSTEM_PROMPTS[analysisMode as keyof typeof SYSTEM_PROMPTS] || SYSTEM_PROMPTS.general;
+
+        // Create the analysis prompt
+        const megaPrompt = `${systemPrompt}\n\nPROJECT CONTEXT:\n${fullContext}\n\nCODING AI QUESTION:\n${params.question}`;
+        
+        // Analyze with Gemini API
+        const genAI = new GoogleGenerativeAI(apiKey);
+        const model = genAI.getGenerativeModel({ model: "gemini-2.5-pro" });
+        
+        const result = await model.generateContent(megaPrompt);
+        const response = await result.response;
+        
+        if (!response.text()) {
+          throw new Error('Gemini returned empty response');
+        }
+
+        const filesProcessed = fullContext.split('--- File:').length - 1;
+
+        return {
+          content: [
+            {
+              type: "text",
+              text: `# Gemini Codebase Analysis Results
+
+## Project: ${params.projectName || "Unnamed Project"}
+
+**Question:** ${params.question}
+**Analysis Mode:** ${analysisMode}
+**Files Processed:** ${filesProcessed}
+**Total Characters:** ${fullContext.length.toLocaleString()}
+
+---
+
+## Analysis
+
+${response.text()}
+
+---
+
+*🏠 Analysis performed locally with Gemini 2.5 Pro in ${analysisMode} mode*`,
+            },
+          ],
+        };
+
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        
+        return {
+          content: [
+            {
+              type: "text",
+              text: `# Gemini Codebase Analysis - Error
+
+❌ **Error:** ${errorMessage}
+
+**Common solutions:**
+- Check codebase context is properly formatted
+- Ensure Gemini API key is valid
+- Try with smaller content or more specific question
+- Verify the analysis mode is supported`,
+            },
+          ],
+          isError: true,
+        };
+      }
+
+    case "gemini_code_search":
+      try {
+        const params = GeminiCodeSearchSchema.parse(args);
+        
+        // Check for Gemini API key
+        const apiKey = process.env.GEMINI_API_KEY;
+        if (!apiKey) {
+          return {
+            content: [
+              {
+                type: "text",
+                text: `# Gemini Code Search - API Key Required
+
+❌ **No Gemini API key found**
+
+**Please set your Gemini API key:**
+\`\`\`bash
+export GEMINI_API_KEY="your-api-key-here"
+\`\`\`
+
+**Get your API key at:** https://makersuite.google.com/app/apikey`,
+              },
+            ],
+            isError: true,
+          };
+        }
+
+        // Use the provided codebase context directly
+        const fullContext = params.codebaseContext;
+        
+        if (fullContext.length === 0) {
+          return {
+            content: [
+              {
+                type: "text",
+                text: `# Gemini Code Search - Empty Context
+
+❌ **Codebase context cannot be empty**
+
+**Please provide formatted codebase content.**`,
+              },
+            ],
+            isError: true,
+          };
+        }
+
+        // Use Gemini AI to search through the codebase content
+        const maxResults = params.maxResults || 5;
+        
+        // Create search prompt for Gemini AI
+        const searchPrompt = `You are an expert code search assistant. Analyze the following codebase and find the most relevant code snippets that match the search query.
+
+SEARCH QUERY: "${params.searchQuery}"
+${params.fileTypes ? `PREFERRED FILE TYPES: ${params.fileTypes.join(', ')}` : ''}
+MAX RESULTS: ${maxResults}
+
+CODEBASE CONTENT:
+${fullContext}
+
+Please find and extract the most relevant code snippets that match the search query. For each match, provide:
+1. File path
+2. Relevant code snippet
+3. Brief explanation of why it matches
+
+Format your response as a structured analysis with clear sections for each match.`;
+
+        // Send search query to Gemini AI
+        const genAI = new GoogleGenerativeAI(apiKey);
+        const model = genAI.getGenerativeModel({ model: "gemini-2.5-pro" });
+        
+        const result = await model.generateContent(searchPrompt);
+        const response = await result.response;
+        
+        if (!response.text()) {
+          throw new Error('Gemini returned empty response');
+        }
+
+        const filesScanned = fullContext.split('--- File:').length - 1;
+        
+        return {
+          content: [
+            {
+              type: "text",
+              text: `# Gemini Code Search Results
+
+## Search Query: "${params.searchQuery}"
+**Project:** ${params.projectName || "Unnamed Project"}
+**Files Scanned:** ${filesScanned}
+**Analysis Mode:** Targeted Search (fast)
+
+---
+
+## Analysis
+
+${response.text()}
+
+---
+
+### Search Summary
+- **Query:** ${params.searchQuery}
+- **File Types:** ${params.fileTypes ? params.fileTypes.join(', ') : 'All files'}
+- **Max Results:** ${maxResults}
+- **Found:** ${filesScanned} relevant code snippets
+
+*🏠 Search powered by Gemini 2.5 Pro locally*`,
+            },
+          ],
+        };
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        
+        return {
+          content: [
+            {
+              type: "text",
+              text: `# Gemini Code Search - Error
+
+❌ **Error:** ${errorMessage}
+
+**Common solutions:**
+- Verify codebase context is properly formatted
+- Ensure Gemini API key is valid
+- Try with more specific search query
+- Check that search query is clear`,
+            },
+          ],
+          isError: true,
+        };
+      }
+
+    case "gemini_dynamic_expert_create":
+      return {
+        content: [
+          {
+            type: "text",
+            text: `# Dynamic Expert Create - Not Available in Local Version
+
+❌ **This tool requires local file system access**
+
+**Alternative approaches:**
+- Use \`gemini_codebase_analyzer\` with specific analysis modes
+- Read your folder locally first, then use \`gemini_codebase_analyzer\`
+- Choose appropriate analysis mode: implementation, debugging, architecture, etc.
+
+**Available analysis modes:**
+- general, implementation, refactoring, explanation, debugging
+- audit, security, performance, testing, documentation
+- migration, review, onboarding, api, and more`,
+          },
+        ],
+        isError: true,
+      };
+
+    case "gemini_dynamic_expert_analyze":
+      return {
+        content: [
+          {
+            type: "text",
+            text: `# Dynamic Expert Analyze - Not Available in Local Version
+
+❌ **This tool requires local file system access**
+
+**Alternative approaches:**
+- Use \`gemini_codebase_analyzer\` with specific analysis modes
+- Read your folder locally first, then use \`gemini_codebase_analyzer\`
+- Choose appropriate analysis mode based on your needs`,
+          },
+        ],
+        isError: true,
+      };
+
+    case "github_repository_analyzer":
+      return {
+        content: [
+          {
+            type: "text",
+            text: `# GitHub Repository Analyzer - Not Available in Local Version
+
+❌ **This tool is for remote GitHub access only**
+
+**This is the LOCAL version - use for local folders:**
+- Use \`analyze_local_folder\` for local directory analysis
+- Read your project folder locally first
+- For GitHub repos, clone them locally and use \`analyze_local_folder\`
+
+**Or use the remote version of this MCP server for direct GitHub access.**`,
+          },
+        ],
+        isError: true,
+      };
+
+    case "read_log_file":
+      return {
+        content: [
+          {
+            type: "text",
+            text: `# Read Log File - Not Available in Local Version
+
+❌ **Log file reading not implemented in local version**
+
+**Alternative approaches:**
+- Check console output for any error messages
+- Use standard logging tools on your local system
+- For debugging, check terminal output when running the server
+
+**Local version focuses on direct folder analysis rather than server logs.**`,
+          },
+        ],
+        isError: true,
+      };
+
+    case "project_orchestrator_create":
+      return {
+        content: [
+          {
+            type: "text",
+            text: `# Project Orchestrator Create - Not Available in Local Version
+
+❌ **This tool requires advanced file system processing**
+
+**Alternative approaches:**
+- Use \`analyze_local_folder\` for large projects
+- Break down your analysis into smaller, focused questions
+- Use \`gemini_codebase_analyzer\` with pre-formatted content
+- For very large projects, analyze subdirectories separately
+
+**The local version is optimized for direct folder analysis.**`,
+          },
+        ],
+        isError: true,
+      };
+
+    case "project_orchestrator_analyze":
+      return {
+        content: [
+          {
+            type: "text",
+            text: `# Project Orchestrator Analyze - Not Available in Local Version
+
+❌ **This tool requires advanced file system processing**
+
+**Alternative approaches:**
+- Use \`analyze_local_folder\` for large projects
+- Break down your analysis into smaller, focused questions
+- Use \`gemini_codebase_analyzer\` with pre-formatted content
+
+**The local version is optimized for direct folder analysis.**`,
+          },
+        ],
+        isError: true,
+      };
+
     default:
-      throw new Error(`Unknown tool: ${name}`);
+      return {
+        content: [
+          {
+            type: "text",
+            text: `# Tool Not Found
+
+❌ **Tool "${name}" is not available**
+
+**Available tools in local version:**
+- get_usage_guide - Learn how to use this server
+- check_api_key_status - Check your API key configuration
+- analyze_local_folder - Analyze local folder directly
+- gemini_codebase_analyzer - Analyze pre-formatted codebase
+- gemini_code_search - Search through codebase content
+
+**Not available in local version:**
+- github_repository_analyzer (use remote version)
+- dynamic expert tools (use analysis modes instead)
+- project orchestrator (use analyze_local_folder)
+- read_log_file (check console output)`,
+          },
+        ],
+        isError: true,
+      };
   }
 });
 
