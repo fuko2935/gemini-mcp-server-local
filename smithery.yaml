@@ -6,9 +6,9 @@ startCommand:
     properties:
       geminiApiKey:
         type: "string"
-        description: "Gemini API key for code analysis"
-    required:
-      - geminiApiKey
+        description: "Gemini API key for code analysis (get from https://makersuite.google.com/app/apikey)"
+        default: ""
+    required: []
 env:
   NODE_ENV: "production"
   DEBUG: "false"

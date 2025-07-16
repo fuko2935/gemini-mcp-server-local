@@ -338,7 +338,7 @@ const server = new Server({
   },
 });
 
-// List available tools
+// List available tools (lazy loading - no API key required)
 server.setRequestHandler(ListToolsRequestSchema, async () => {
   return {
     tools: [
@@ -360,7 +360,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       try {
         const params = LocalFolderAnalyzerSchema.parse(args);
         
-        // Check for Gemini API key from environment or config
+        // Check for Gemini API key from environment or config (lazy loading)
         const apiKey = process.env.GEMINI_API_KEY || process.env.geminiApiKey;
         if (!apiKey) {
           return {
@@ -380,7 +380,10 @@ export GEMINI_API_KEY="your-api-key-here"
 
 **For permanent setup, add to your shell profile:**
 - ~/.bashrc or ~/.zshrc: \`export GEMINI_API_KEY="your-key"\`
-- Windows: Set environment variable in System Properties`,
+- Windows: Set environment variable in System Properties
+
+**For Smithery AI deployment:**
+Set \`geminiApiKey\` in your server configuration.`,
               },
             ],
             isError: true,
