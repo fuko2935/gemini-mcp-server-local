@@ -497,7 +497,23 @@ const ProjectOrchestratorAnalyzeSchema = z.object({
 
 // Local folder reading function
 async function readLocalFolder(folderPath: string): Promise<{context: string, projectName: string, fileCount: number}> {
-  const absolutePath = path.resolve(folderPath);
+  // For local version, handle paths directly without Docker normalization
+  let absolutePath: string;
+  
+  if (path.isAbsolute(folderPath)) {
+    // If it's already absolute, use as-is
+    absolutePath = folderPath;
+  } else {
+    // If it's relative, resolve from actual working directory
+    absolutePath = path.resolve(process.cwd(), folderPath);
+  }
+  
+  // Debug: Log the paths being used
+  console.log('📁 Local Folder Analysis Debug:');
+  console.log('   Input path:', folderPath);
+  console.log('   Resolved path:', absolutePath);
+  console.log('   Current working directory:', process.cwd());
+  console.log('   Path exists check...');
   
   // Check if directory exists
   try {
