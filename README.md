@@ -1,5 +1,7 @@
 # Gemini MCP Server - Local Version
 
+[![smithery badge](https://smithery.ai/badge/@fuko2935/gemini-mcp-server-local)](https://smithery.ai/server/@fuko2935/gemini-mcp-server-local)
+
 🏠 **Local MCP server for Gemini AI codebase analysis with direct folder path support**
 
 Perfect for private projects, local development, and security-conscious teams. Your code never leaves your machine.
