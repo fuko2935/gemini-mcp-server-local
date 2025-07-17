@@ -712,7 +712,7 @@ This is your local expert coding companion with **36 specialized analysis modes*
 
 ### 📁 **analyze_local_folder** - Direct Folder Analysis
 - **EASIEST FOR LOCAL**: Just provide a folder path!
-- ⚠️ **SMITHERY AI**: Use absolute paths (e.g., `/mnt/c/Projects/user/project`)
+- ⚠️ **SMITHERY AI**: Use absolute paths (e.g., '/mnt/c/Projects/user/project')
 - Automatic file reading and processing
 - All 36 analysis modes available
 - Perfect for private projects and local development
