@@ -5,15 +5,14 @@
   "type": "module",
   "main": "dist/server.js",
   "module": "./src/server.ts",
+  "files": [
+    "dist"
+  ],
   "bin": {
     "gemini-mcp-server-local": "dist/server.js"
   },
-  "exports": {
-    ".": {
-      "import": "./dist/server.js",
-      "require": "./dist/server.js"
-    }
-  },
+  "exports": "./dist/server.js",
+  "types": "dist/server.d.ts",
   "scripts": {
     "build": "tsc && chmod +x dist/server.js",
     "start": "node dist/server.js",
@@ -41,6 +40,9 @@
     "winston": "^3.11.0",
     "zod": "^3.25.76",
     "zod-to-json-schema": "^3.24.6"
+  },
+  "engines": {
+    "node": ">=20.0.0"
   },
   "devDependencies": {
     "@types/node": "^20.10.0",
