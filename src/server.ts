@@ -320,7 +320,7 @@ const ApiKeyStatusSchema = z.object({
 
 // Local Folder Analyzer Schema
 const LocalFolderAnalyzerSchema = z.object({
-  folderPath: z.string().min(1).describe("📁 FOLDER PATH: Direct path to your project folder. Examples: '/home/user/myproject', 'C:\\\\Users\\\\Name\\\\MyProject', '.' for current directory, './src' for subdirectory. The server will automatically read and analyze all relevant files in the specified folder."),
+  folderPath: z.string().min(1).describe("📁 FOLDER PATH: Direct path to your project folder. ⚠️ IMPORTANT: For Smithery AI deployment, use ABSOLUTE paths (e.g., '/mnt/c/Projects/user/project'). Relative paths like '../folder' may not work correctly in container environments. Examples: '/home/user/myproject', 'C:\\\\Users\\\\Name\\\\MyProject', '/mnt/c/Projects/1312/M/flash/new/tnt3'. For local development: '.' for current directory, './src' for subdirectory."),
   question: z.string().min(1).max(2000).describe("❓ YOUR QUESTION: Ask anything about the codebase. 🌍 TIP: Use English for best AI performance! Examples: 'How does authentication work?', 'Find all API endpoints', 'Explain the database schema', 'What are the main components?', 'How to deploy this?', 'Find security vulnerabilities'. 💡 NEW USER? Use 'get_usage_guide' tool first to learn all capabilities!"),
   projectName: z.string().optional().describe("📋 PROJECT NAME: Optional name for your project to provide better context in the analysis results."),
   analysisMode: z.enum(["general", "implementation", "refactoring", "explanation", "debugging", "audit", "security", "performance", "testing", "documentation", "migration", "review", "onboarding", "api", "apex", "gamedev", "aiml", "devops", "mobile", "frontend", "backend", "database", "startup", "enterprise", "blockchain", "embedded", "architecture", "cloud", "data", "monitoring", "infrastructure", "compliance", "opensource", "freelancer", "education", "research"]).optional().describe(`🎯 ANALYSIS MODE (choose the expert that best fits your needs):
@@ -504,16 +504,30 @@ async function readLocalFolder(folderPath: string): Promise<{context: string, pr
     // If it's already absolute, use as-is
     absolutePath = folderPath;
   } else {
-    // If it's relative, resolve from actual working directory
-    absolutePath = path.resolve(folderPath);
+    // If it's relative, resolve from current working directory
+    // Use path.resolve with explicit current working directory
+    absolutePath = path.resolve(process.cwd(), folderPath);
   }
+  
+  // Normalize the path to handle any irregularities
+  absolutePath = path.normalize(absolutePath);
   
   // Debug: Log the paths being used
   console.log('📁 Local Folder Analysis Debug:');
   console.log('   Input path:', folderPath);
-  console.log('   Resolved path:', absolutePath);
   console.log('   Current working directory:', process.cwd());
+  console.log('   Is input path absolute?', path.isAbsolute(folderPath));
+  console.log('   path.resolve(process.cwd(), folderPath):', path.resolve(process.cwd(), folderPath));
+  console.log('   Resolved path:', absolutePath);
   console.log('   Path exists check...');
+  
+  // Check if we're running in a container or unusual environment
+  const cwd = process.cwd();
+  if (cwd === '/app' || cwd === '/' || cwd.startsWith('/app/')) {
+    console.log('⚠️  WARNING: Running in container-like environment');
+    console.log('   For relative paths, consider using absolute paths instead');
+    console.log('   Example: /mnt/c/Projects/1312/M/flash/new/tnt3');
+  }
   
   // Check if directory exists
   try {
@@ -639,7 +653,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
       },
       {
         name: "analyze_local_folder",
-        description: "📁 ANALYZE LOCAL FOLDER - **EASIEST FOR LOCAL** Direct folder path analysis with full local control! Perfect for private projects and local development. All 36 analysis modes available. Your code never leaves your machine.",
+        description: "📁 ANALYZE LOCAL FOLDER - **EASIEST FOR LOCAL** Direct folder path analysis with full local control! ⚠️ SMITHERY AI: Use absolute paths (e.g., '/mnt/c/Projects/user/project'). Perfect for private projects and local development. All 36 analysis modes available. Your code never leaves your machine.",
         inputSchema: zodToJsonSchema(LocalFolderAnalyzerSchema),
       },
       {
@@ -698,6 +712,7 @@ This is your local expert coding companion with **36 specialized analysis modes*
 
 ### 📁 **analyze_local_folder** - Direct Folder Analysis
 - **EASIEST FOR LOCAL**: Just provide a folder path!
+- ⚠️ **SMITHERY AI**: Use absolute paths (e.g., `/mnt/c/Projects/user/project`)
 - Automatic file reading and processing
 - All 36 analysis modes available
 - Perfect for private projects and local development
@@ -1416,6 +1431,10 @@ ${response.text()}
 
 // Start the server
 async function main() {
+  // Log initial working directory for debugging
+  console.log(`🏠 MCP Server starting from directory: ${process.cwd()}`);
+  console.log(`📂 Server file location: ${__dirname}`);
+  
   // Check for --cwd argument to change working directory
   const cwdArgIndex = process.argv.indexOf('--cwd');
   if (cwdArgIndex !== -1 && cwdArgIndex + 1 < process.argv.length) {

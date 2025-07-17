@@ -137,20 +137,29 @@ node dist/server.js
 ```
 
 ### Path Examples (Use Your Own Paths)
-```bash
-# Windows examples
-{"folderPath": "C:\\MyProject", "question": "Analyze this"}
-{"folderPath": "D:\\Development\\MyApp", "question": "Review code"}
 
-# Linux/Mac examples  
+**⚠️ IMPORTANT: For Smithery AI deployment, use ABSOLUTE paths only!**
+
+```bash
+# Smithery AI deployment (ABSOLUTE paths required)
+{"folderPath": "/mnt/c/Projects/user/project", "question": "Analyze this"}
 {"folderPath": "/home/user/projects/myapp", "question": "Analyze this"}
 {"folderPath": "/Users/name/Development/project", "question": "Review code"}
 
-# Relative paths (recommended)
+# Windows examples (absolute paths)
+{"folderPath": "C:\\MyProject", "question": "Analyze this"}
+{"folderPath": "D:\\Development\\MyApp", "question": "Review code"}
+
+# Local development only (relative paths)
 {"folderPath": ".", "question": "Analyze current directory"}
 {"folderPath": "./src", "question": "Analyze source code"}
 {"folderPath": "../other-project", "question": "Analyze sibling project"}
 ```
+
+**Path Resolution Notes:**
+- **Smithery AI**: Container environment requires absolute paths
+- **Local development**: Both absolute and relative paths work
+- **Relative paths**: May not work correctly in container deployments
 
 ## Configuration
 
@@ -239,6 +248,11 @@ node dist/server.js
 - Check folder path exists and is readable
 - Ensure folder contains supported file types
 - Verify permissions
+
+**Path resolution issues:**
+- **Smithery AI**: Use absolute paths (e.g., `/mnt/c/Projects/user/project`)
+- **Container errors**: Relative paths like `../folder` may resolve incorrectly
+- **Check logs**: Look for "Local Folder Analysis Debug" messages
 
 **API Key errors:**
 - Verify `GEMINI_API_KEY` is set correctly
