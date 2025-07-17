@@ -1,15 +1,16 @@
+runtime: "typescript"
 startCommand:
-  type: stdio
+  type: "stdio"
   configSchema:
-    type: object
+    type: "object"
     required:
       - geminiApiKeys
     properties:
       geminiApiKeys:
-        type: string
+        type: "string"
         description: "Your Gemini API keys from Google AI Studio. You can enter multiple keys separated by commas for automatic rotation (e.g., 'key1,key2,key3'). Get yours at: https://makersuite.google.com/app/apikey"
       logsPath:
-        type: string
+        type: "string"
         description: "The absolute path inside the container for log files. Default: /app/logs"
         default: "/app/logs"
   exampleConfig:
@@ -24,3 +25,5 @@ startCommand:
         LOGS_DIR: config.logsPath || '/app/logs'
       }
     })
+env:
+  NODE_ENV: "production"
